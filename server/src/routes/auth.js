@@ -9,6 +9,7 @@ import { auth } from '../middleware/auth.js';
 import { authLimiter } from '../middleware/rateLimit.js';
 import { validate } from '../middleware/validate.js';
 
+export function createAuthRouter(UserModel = User) {
 const router = Router();
 const registerSchema = z.object({
   email: z.string().trim().email().max(254).transform((value) => value.toLowerCase()),
@@ -43,7 +44,7 @@ router.post('/register', authLimiter, validate(registerSchema), asyncHandler(asy
   const slug = role === 'candidate' ? `${fullName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 36)}-${Math.random().toString(36).slice(2, 7)}` : undefined;
   let user;
   try {
-    user = await User.create({ email, passwordHash, fullName, role, ...(orgName ? { orgName } : {}), ...(slug ? { slug } : {}) });
+    user = await UserModel.create({ email, passwordHash, fullName, role, ...(orgName ? { orgName } : {}), ...(slug ? { slug } : {}) });
   } catch (error) {
     if (error.code === 11000) return res.status(409).json({ ok: false, error: { message: 'An account with this email already exists', code: 'EMAIL_IN_USE' } });
     throw error;
@@ -53,7 +54,7 @@ router.post('/register', authLimiter, validate(registerSchema), asyncHandler(asy
 }));
 
 router.post('/login', authLimiter, validate(loginSchema), asyncHandler(async (req, res) => {
-  const user = await User.findOne({ email: req.body.email }).select('+passwordHash');
+  const user = await UserModel.findOne({ email: req.body.email }).select('+passwordHash');
   if (!user || !(await bcrypt.compare(req.body.password, user.passwordHash))) {
     return res.status(401).json({ ok: false, error: { message: 'Email or password is incorrect', code: 'INVALID_CREDENTIALS' } });
   }
@@ -67,9 +68,12 @@ router.post('/logout', (_req, res) => {
 });
 
 router.get('/me', auth, asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user.id);
+  const user = await UserModel.findById(req.user.id);
   if (!user) return res.status(401).json({ ok: false, error: { message: 'Session expired. Sign in again.', code: 'INVALID_SESSION' } });
   return res.json({ ok: true, data: { user: publicUser(user) } });
 }));
 
-export default router;
+return router;
+}
+
+export default createAuthRouter();

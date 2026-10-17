@@ -6,7 +6,7 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "test": "vitest run",
-    "lint": "eslint src scripts tests"
+    "lint": "eslint src tests"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",

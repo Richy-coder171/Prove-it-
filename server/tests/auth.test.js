@@ -1,21 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
-
-vi.mock('../src/models/User.js', () => ({
-  default: {
-    create: vi.fn(),
-    findOne: vi.fn(),
-    findById: vi.fn(),
-  },
-}));
-
-const [{ default: app }, { default: User }] = await Promise.all([
-  import('../src/app.js'),
-  import('../src/models/User.js'),
-]);
+import { createApp } from '../src/app.js';
+import { createAuthRouter } from '../src/routes/auth.js';
 
 describe('authentication routes', () => {
-  beforeEach(() => vi.clearAllMocks());
+  let User;
+  let app;
+
+  beforeEach(() => {
+    User = { create: vi.fn(), findOne: vi.fn(), findById: vi.fn() };
+    app = createApp({ authRouter: createAuthRouter(User) });
+  });
 
   it('registers a user and sets an httpOnly session cookie', async () => {
     User.create.mockResolvedValue({ id: 'candidate-1', email: 'person@example.com', fullName: 'A Person', role: 'candidate' });
@@ -28,6 +23,7 @@ describe('authentication routes', () => {
     expect(response.body.data.user).toMatchObject({ email: 'person@example.com', role: 'candidate' });
     expect(response.headers['set-cookie'][0]).toContain('HttpOnly');
     expect(response.body.data.user.passwordHash).toBeUndefined();
+    expect(User.create.mock.calls[0][0].passwordHash).not.toBe('correct-horse-battery');
   });
 
   it('rejects weak passwords before reaching the user store', async () => {
