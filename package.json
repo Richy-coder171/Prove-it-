@@ -1,0 +1,25 @@
+{
+  "name": "proveit",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "workspaces": ["client", "server"],
+  "scripts": {
+    "dev": "concurrently -k -n server,client -c cyan,magenta \"npm run dev -w server\" \"npm run dev -w client\"",
+    "seed": "npm run seed -w server",
+    "test": "npm test -w server && npm test -w client",
+    "smoke": "npm run smoke -w server",
+    "build": "npm run build -w client",
+    "lint": "npm run lint -w server && npm run lint -w client",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.37.0",
+    "concurrently": "^9.2.1",
+    "eslint": "^9.37.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^16.4.0",
+    "prettier": "^3.6.2"
+  }
+}

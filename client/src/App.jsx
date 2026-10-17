@@ -1,0 +1,22 @@
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { SiteLayout } from './components/SiteLayout.jsx';
+import ProtectedRoute from './components/ProtectedRoute.jsx';
+import Landing from './pages/Landing.jsx';
+import { Login, Register } from './pages/AuthPages.jsx';
+import Ethics from './pages/Ethics.jsx';
+import AppHome from './pages/AppHome.jsx';
+
+function NotFound() {
+  return <main className="not-found"><p className="eyebrow">This page wandered off</p><h1>Let’s find<br /><em>your way back.</em></h1><a className="button button-dark" href="/">Back to home</a></main>;
+}
+
+export default function App() {
+  return <Routes><Route element={<SiteLayout />}>
+    <Route index element={<Landing />} />
+    <Route path="login" element={<Login />} />
+    <Route path="register" element={<Register />} />
+    <Route path="ethics" element={<Ethics />} />
+    <Route element={<ProtectedRoute />}><Route path="app" element={<AppHome />} /></Route>
+    <Route path="*" element={<NotFound />} />
+  </Route><Route path="/home" element={<Navigate to="/" replace />} /></Routes>;
+}
