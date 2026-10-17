@@ -10,6 +10,7 @@ import ReviewChallenge from "./pages/ReviewChallenge.jsx";
 import ChallengeIntro from "./pages/ChallengeIntro.jsx";
 import Solve from "./pages/Solve.jsx";
 import Defend from "./pages/Defend.jsx";
+import Result from "./pages/Result.jsx";
 import "./workspace.css";
 import "./flow.css";
 
@@ -51,6 +52,7 @@ export default function App() {
         <Route element={<ProtectedRoute roles={["candidate"]} />}>
           <Route path="s/:id" element={<Solve />} />
           <Route path="s/:id/defend" element={<Defend />} />
+          <Route path="s/:id/result" element={<Result />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Route>

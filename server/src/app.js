@@ -7,6 +7,7 @@ import morgan from "morgan";
 import authRoutes from "./routes/auth.js";
 import challengeRoutes from "./routes/challenges.js";
 import submissionRoutes from "./routes/submissions.js";
+import rereviewRoutes from "./routes/rereview.js";
 import { env } from "./config/env.js";
 import { generalLimiter } from "./middleware/rateLimit.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
@@ -15,6 +16,7 @@ export function createApp({
   authRouter = authRoutes,
   challengeRouter = challengeRoutes,
   submissionRouter = submissionRoutes,
+  rereviewRouter = rereviewRoutes,
 } = {}) {
   const app = express();
   app.disable("x-powered-by");
@@ -32,6 +34,7 @@ export function createApp({
   app.use("/api/auth", authRouter);
   app.use("/api/challenges", challengeRouter);
   app.use("/api/submissions", submissionRouter);
+  app.use("/api/rereview", rereviewRouter);
   app.use(notFound);
   app.use(errorHandler);
   return app;

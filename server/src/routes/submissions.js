@@ -9,6 +9,8 @@ import { validate } from "../middleware/validate.js";
 import multer from "multer";
 import { generateFollowups } from "../services/ai/followups.js";
 import { openAuthorizedAudio, storeAndTranscribe } from "../services/audio.js";
+import Score from "../models/Score.js";
+import { gradeSubmission } from "../services/ai/grader.js";
 
 export function createSubmissionRouter({
   SubmissionModel = Submission,
@@ -16,6 +18,8 @@ export function createSubmissionRouter({
   followupGenerator = generateFollowups,
   audioStore = storeAndTranscribe,
   audioOpen = openAuthorizedAudio,
+  ScoreModel = Score,
+  grade = gradeSubmission,
 } = {}) {
   const router = Router();
   const idSchema = z
@@ -95,6 +99,44 @@ export function createSubmissionRouter({
       return res.json({ ok: true, data: { id: followup.qid, answered: true, transcript, answeredBy } });
     }),
   );
+
+  router.post(
+    "/:id/finalize", auth, requireRole("candidate"), validate(idSchema, "params"),
+    asyncHandler(async (req, res) => {
+      const submission = await owned(req);
+      if (!submission) return res.status(404).json({ ok: false, error: { message: "Submission not found", code: "NOT_FOUND" } });
+      if (submission.status === "graded") {
+        const score = await ScoreModel.findOne({ submission: submission.id });
+        return res.json({ ok: true, data: { score } });
+      }
+      if (!["defending", "error"].includes(submission.status)) return res.status(409).json({ ok: false, error: { message: "Complete your answer defense before scoring", code: "DEFENSE_INCOMPLETE" } });
+      if (submission.followups.length !== 3 || submission.followups.some(({ answeredAt }) => !answeredAt)) return res.status(409).json({ ok: false, error: { message: "Answer all three defense questions before scoring", code: "DEFENSE_INCOMPLETE" } });
+      submission.status = "grading";
+      await submission.save();
+      try {
+        const { score } = await grade({ submissionId: submission.id });
+        submission.status = "graded";
+        await submission.save();
+        return res.json({ ok: true, data: { score } });
+      } catch (error) {
+        submission.status = "error";
+        await submission.save();
+        throw error;
+      }
+    }),
+  );
+
+  router.get(
+    "/:id/result", auth, requireRole("candidate", "startup"), validate(idSchema, "params"),
+    asyncHandler(async (req, res) => {
+      const submission = await SubmissionModel.findById(req.params.id).populate("challenge", "owner title skill level");
+      if (!submission || (req.user.role === "candidate" && String(submission.candidate) !== req.user.id) || (req.user.role === "startup" && String(submission.challenge.owner) !== req.user.id)) return res.status(404).json({ ok: false, error: { message: "Result not found", code: "NOT_FOUND" } });
+      const score = await ScoreModel.findOne({ submission: submission.id }).select("-runs");
+      if (!score) return res.status(404).json({ ok: false, error: { message: "No result is available yet", code: "RESULT_PENDING" } });
+      return res.json({ ok: true, data: { score, challenge: submission.challenge, status: submission.status } });
+    }),
+  );
+
 
   router.get(
     "/:id/audio/:qid", auth, requireRole("candidate"), validate(questionParamsSchema, "params"),
