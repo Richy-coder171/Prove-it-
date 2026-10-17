@@ -1,14 +1,16 @@
-import app from './app.js';
-import { connectDb } from './config/db.js';
-import { env } from './config/env.js';
+import app from "./app.js";
+import { connectDb } from "./config/db.js";
+import { env } from "./config/env.js";
 
 try {
   await connectDb();
   const server = app.listen(env.PORT, () => {
-    process.stdout.write(`ProveIt API listening on http://localhost:${env.PORT}\n`);
+    process.stdout.write(
+      `ProveIt API listening on http://localhost:${env.PORT}\n`,
+    );
   });
 
-  for (const signal of ['SIGINT', 'SIGTERM']) {
+  for (const signal of ["SIGINT", "SIGTERM"]) {
     process.on(signal, () => server.close(() => process.exit(0)));
   }
 } catch (error) {

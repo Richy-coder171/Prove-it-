@@ -21,6 +21,7 @@ import Opportunities from "./pages/Opportunities.jsx";
 import VentureCreate from "./pages/VentureCreate.jsx";
 import VentureCard from "./pages/VentureCard.jsx";
 import CandidateMatches from "./pages/CandidateMatches.jsx";
+import Demo from "./pages/Demo.jsx";
 import "./workspace.css";
 import "./flow.css";
 
@@ -48,6 +49,7 @@ export default function App() {
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
         <Route path="ethics" element={<Ethics />} />
+        <Route path="demo" element={<Demo />} />
         <Route path="badge/:vid" element={<BadgePage />} />
         <Route path="u/:slug" element={<PublicProfile />} />
         <Route path="venture/:id" element={<VentureCard />} />
@@ -61,8 +63,14 @@ export default function App() {
             path="startup/challenges/:id/review"
             element={<ReviewChallenge />}
           />
-          <Route path="startup/challenges/:id/leaderboard" element={<Leaderboard />} />
-          <Route path="startup/challenges/:id/matches" element={<CandidateMatches />} />
+          <Route
+            path="startup/challenges/:id/leaderboard"
+            element={<Leaderboard />}
+          />
+          <Route
+            path="startup/challenges/:id/matches"
+            element={<CandidateMatches />}
+          />
           <Route path="startup/submissions/:id" element={<CandidateDetail />} />
           <Route path="startup/ventures/new" element={<VentureCreate />} />
         </Route>

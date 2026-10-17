@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowRight,
@@ -14,6 +14,7 @@ import { useAuth } from "../hooks/useAuth.js";
 export default function ChallengeIntro() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const challengeQuery = useQuery({
     queryKey: ["public-challenge", id],
@@ -25,6 +26,13 @@ export default function ChallengeIntro() {
       (await api.post("/submissions/start", { challengeId: id })).data.data
         .submission,
     onSuccess: (submission) => navigate(`/s/${submission.id}`),
+  });
+  const switchToCandidate = useMutation({
+    mutationFn: () => api.post("/auth/logout"),
+    onSuccess: () => {
+      queryClient.setQueryData(["auth", "me"], null);
+      navigate(registerLink);
+    },
   });
   const challenge = challengeQuery.data;
   const canStart = user?.role === "candidate";
@@ -91,6 +99,17 @@ export default function ChallengeIntro() {
             {start.isPending ? "Starting your timer…" : "Start challenge"}{" "}
             <ArrowRight size={17} />
           </button>
+        ) : user ? (
+          <button
+            className="button button-acid"
+            disabled={switchToCandidate.isPending}
+            onClick={() => switchToCandidate.mutate()}
+          >
+            {switchToCandidate.isPending
+              ? "Switching account…"
+              : "Sign out and continue as a candidate"}{" "}
+            <ArrowRight size={17} />
+          </button>
         ) : (
           <Link className="button button-acid" to={registerLink}>
             Continue as a candidate <ArrowRight size={17} />
@@ -99,6 +118,11 @@ export default function ChallengeIntro() {
         {start.isError && (
           <p className="form-error" role="alert">
             {getApiError(start.error)}
+          </p>
+        )}
+        {switchToCandidate.isError && (
+          <p className="form-error" role="alert">
+            {getApiError(switchToCandidate.error)}
           </p>
         )}
         <p className="ethics-reminder">

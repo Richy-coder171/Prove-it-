@@ -78,12 +78,10 @@ export function createChallengeRouter({
     asyncHandler(async (req, res) => {
       const challenge = await ChallengeModel.findById(req.params.id);
       if (!challenge)
-        return res
-          .status(404)
-          .json({
-            ok: false,
-            error: { message: "Challenge not found", code: "NOT_FOUND" },
-          });
+        return res.status(404).json({
+          ok: false,
+          error: { message: "Challenge not found", code: "NOT_FOUND" },
+        });
       if (isOwner(challenge, req.user))
         return res.json({ ok: true, data: { challenge } });
       if (challenge.status === "approved")
@@ -91,12 +89,10 @@ export function createChallengeRouter({
           ok: true,
           data: { challenge: publicChallenge(challenge) },
         });
-      return res
-        .status(404)
-        .json({
-          ok: false,
-          error: { message: "Challenge not found", code: "NOT_FOUND" },
-        });
+      return res.status(404).json({
+        ok: false,
+        error: { message: "Challenge not found", code: "NOT_FOUND" },
+      });
     }),
   );
 
@@ -113,12 +109,10 @@ export function createChallengeRouter({
         { new: true, runValidators: true },
       );
       if (!challenge)
-        return res
-          .status(404)
-          .json({
-            ok: false,
-            error: { message: "Draft challenge not found", code: "NOT_FOUND" },
-          });
+        return res.status(404).json({
+          ok: false,
+          error: { message: "Draft challenge not found", code: "NOT_FOUND" },
+        });
       return res.json({ ok: true, data: { challenge } });
     }),
   );
@@ -135,26 +129,22 @@ export function createChallengeRouter({
         status: "draft",
       });
       if (!challenge)
-        return res
-          .status(404)
-          .json({
-            ok: false,
-            error: { message: "Draft challenge not found", code: "NOT_FOUND" },
-          });
+        return res.status(404).json({
+          ok: false,
+          error: { message: "Draft challenge not found", code: "NOT_FOUND" },
+        });
       const weightTotal = challenge.rubric.criteria.reduce(
         (total, criterion) => total + criterion.weight,
         0,
       );
       if (Math.round(weightTotal * 100) / 100 !== 100)
-        return res
-          .status(400)
-          .json({
-            ok: false,
-            error: {
-              message: "Rubric weights must sum to 100 before approval",
-              code: "INVALID_RUBRIC",
-            },
-          });
+        return res.status(400).json({
+          ok: false,
+          error: {
+            message: "Rubric weights must sum to 100 before approval",
+            code: "INVALID_RUBRIC",
+          },
+        });
       challenge.status = "approved";
       challenge.approvedAt = new Date();
       await challenge.save();
@@ -176,12 +166,10 @@ export function createChallengeRouter({
         status: "draft",
       });
       if (!current)
-        return res
-          .status(404)
-          .json({
-            ok: false,
-            error: { message: "Draft challenge not found", code: "NOT_FOUND" },
-          });
+        return res.status(404).json({
+          ok: false,
+          error: { message: "Draft challenge not found", code: "NOT_FOUND" },
+        });
       const replacement = await generateChallengeFn({
         owner: req.user.id,
         mode: current.mode,

@@ -2,8 +2,13 @@
   "name": "proveit",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=20" },
-  "workspaces": ["client", "server"],
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "client",
+    "server"
+  ],
   "scripts": {
     "dev": "concurrently -k -n server,client -c cyan,magenta \"npm run dev -w server\" \"npm run dev -w client\"",
     "seed": "npm run seed -w server",
@@ -11,7 +16,7 @@
     "smoke": "npm run smoke -w server",
     "build": "npm run build -w client",
     "lint": "npm run lint -w server && npm run lint -w client",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check README.md docs client/index.html client/src client/tailwind.config.js client/vite.config.js server/src server/tests server/scripts eslint.config.js package.json client/package.json server/package.json"
   },
   "devDependencies": {
     "@eslint/js": "^9.37.0",

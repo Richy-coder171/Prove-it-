@@ -118,8 +118,20 @@ export default function ReviewChallenge() {
         <h1>{challenge.title}</h1>
         <p>This challenge has already been approved.</p>
         <ChallengeShare shareUrl={shareUrl} onCopy={copyLink} />
-        <Link className="button button-dark review-leaderboard-link" to={`/startup/challenges/${id}/leaderboard`}>Open leaderboard</Link>
-        {challenge.mode === "founder" && <Link className="text-link" to={`/startup/ventures/new?challengeId=${id}`}>Create a Venture Card</Link>}
+        <Link
+          className="button button-dark review-leaderboard-link"
+          to={`/startup/challenges/${id}/leaderboard`}
+        >
+          Open leaderboard
+        </Link>
+        {challenge.mode === "founder" && (
+          <Link
+            className="text-link"
+            to={`/startup/ventures/new?challengeId=${id}`}
+          >
+            Create a Venture Card
+          </Link>
+        )}
       </main>
     );
 

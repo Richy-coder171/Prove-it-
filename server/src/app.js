@@ -13,8 +13,11 @@ import mentorRoutes from "./routes/mentor.js";
 import badgeRoutes from "./routes/badges.js";
 import profileRoutes from "./routes/profiles.js";
 import skillGapRoutes from "./routes/skillgap.js";
-import opportunityRoutes, { createCandidateMatchRouter } from "./routes/opportunities.js";
+import opportunityRoutes, {
+  createCandidateMatchRouter,
+} from "./routes/opportunities.js";
 import ventureRoutes from "./routes/ventures.js";
+import demoRoutes from "./routes/demo.js";
 import { env } from "./config/env.js";
 import { generalLimiter } from "./middleware/rateLimit.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
@@ -32,6 +35,7 @@ export function createApp({
   opportunityRouter = opportunityRoutes,
   candidateMatchRouter = createCandidateMatchRouter(),
   ventureRouter = ventureRoutes,
+  demoRouter = demoRoutes,
 } = {}) {
   const app = express();
   app.disable("x-powered-by");
@@ -58,6 +62,7 @@ export function createApp({
   app.use("/api/opportunities", opportunityRouter);
   app.use("/api/candidates", candidateMatchRouter);
   app.use("/api/ventures", ventureRouter);
+  app.use("/api/demo", demoRouter);
   app.use(notFound);
   app.use(errorHandler);
   return app;

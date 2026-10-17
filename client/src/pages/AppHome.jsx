@@ -36,7 +36,14 @@ export default function AppHome() {
             Open mentor queue <ArrowRight size={16} />
           </Link>
         ) : user?.role === "candidate" ? (
-          <div className="app-home-links"><Link to="/profile" className="button button-dark">Manage profile and badges <ArrowRight size={16} /></Link><Link to="/opportunities" className="text-link">Browse matched opportunities <ArrowUpRight size={15} /></Link></div>
+          <div className="app-home-links">
+            <Link to="/profile" className="button button-dark">
+              Manage profile and badges <ArrowRight size={16} />
+            </Link>
+            <Link to="/opportunities" className="text-link">
+              Browse matched opportunities <ArrowUpRight size={15} />
+            </Link>
+          </div>
         ) : (
           <Link to="/ethics" className="text-link">
             How ProveIt works <ArrowUpRight size={15} />

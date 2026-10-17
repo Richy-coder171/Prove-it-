@@ -5,8 +5,10 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
+    "seed": "node scripts/seed.js && node scripts/cacheDemoResponses.js",
+    "smoke": "node scripts/smoke.js",
     "test": "vitest run",
-    "lint": "eslint src tests"
+    "lint": "eslint src tests scripts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",
