@@ -31,7 +31,7 @@ function sessionCookieOptions() {
 }
 
 function publicUser(user) {
-  return { id: user.id, email: user.email, fullName: user.fullName, role: user.role, orgName: user.orgName ?? null };
+  return { id: user.id, email: user.email, fullName: user.fullName, role: user.role, orgName: user.orgName ?? null, slug: user.slug ?? null };
 }
 
 function createSession(user) {

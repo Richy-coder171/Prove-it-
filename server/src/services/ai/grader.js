@@ -5,6 +5,7 @@ import Submission from '../../models/Submission.js';
 import { validateEvidence } from '../../utils/evidence.js';
 import { callClaudeJSON } from './client.js';
 import { graderSystem } from './prompts/grader.js';
+import { issueBadge } from '../badge.js';
 
 export const GraderOutputSchema = z.object({
   criteria: z.array(z.object({ id: z.string(), name: z.string(), weight: z.number().min(1).max(100), score: z.number().min(0).max(100), max: z.number().min(1).max(100), evidence: z.array(z.string().min(1).max(500)).max(5), why: z.string().trim().min(8).max(1000) }).strict()).min(4).max(6),
@@ -88,5 +89,6 @@ export async function gradeSubmission({ submissionId, SubmissionModel = Submissi
   if (runs.length < 2) throw Object.assign(new Error('Scoring could not reach a reliable result. Please retry or request human review.'), { status: 502, code: 'GRADING_UNAVAILABLE' });
   const aggregate = aggregateRuns(runs);
   const score = await ScoreModel.findOneAndUpdate({ submission: submission.id }, { $set: { ...aggregate, runs, finalTotal: aggregate.total } }, { upsert: true, new: true, runValidators: true });
+  await issueBadge({ submission, challenge, score });
   return { score, submission, challenge };
 }

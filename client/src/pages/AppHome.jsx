@@ -31,6 +31,14 @@ export default function AppHome() {
           <Link to="/startup/challenges/new" className="button button-dark">
             Create a challenge <ArrowRight size={16} />
           </Link>
+        ) : user?.role === "mentor" ? (
+          <Link to="/mentor" className="button button-dark">
+            Open mentor queue <ArrowRight size={16} />
+          </Link>
+        ) : user?.role === "candidate" ? (
+          <Link to="/profile" className="button button-dark">
+            Manage profile and badges <ArrowRight size={16} />
+          </Link>
         ) : (
           <Link to="/ethics" className="text-link">
             How ProveIt works <ArrowUpRight size={15} />

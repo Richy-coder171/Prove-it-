@@ -11,6 +11,7 @@ import { generateFollowups } from "../services/ai/followups.js";
 import { openAuthorizedAudio, storeAndTranscribe } from "../services/audio.js";
 import Score from "../models/Score.js";
 import { gradeSubmission } from "../services/ai/grader.js";
+import Badge from "../models/Badge.js";
 
 export function createSubmissionRouter({
   SubmissionModel = Submission,
@@ -19,6 +20,7 @@ export function createSubmissionRouter({
   audioStore = storeAndTranscribe,
   audioOpen = openAuthorizedAudio,
   ScoreModel = Score,
+  BadgeModel = Badge,
   grade = gradeSubmission,
 } = {}) {
   const router = Router();
@@ -133,7 +135,19 @@ export function createSubmissionRouter({
       if (!submission || (req.user.role === "candidate" && String(submission.candidate) !== req.user.id) || (req.user.role === "startup" && String(submission.challenge.owner) !== req.user.id)) return res.status(404).json({ ok: false, error: { message: "Result not found", code: "NOT_FOUND" } });
       const score = await ScoreModel.findOne({ submission: submission.id }).select("-runs");
       if (!score) return res.status(404).json({ ok: false, error: { message: "No result is available yet", code: "RESULT_PENDING" } });
-      return res.json({ ok: true, data: { score, challenge: submission.challenge, status: submission.status } });
+      const badge = await BadgeModel.findOne({ submission: submission.id, candidate: submission.candidate }).select("verificationId skill level score authenticity issuedAt isPublic");
+      return res.json({ ok: true, data: { score, badge, challenge: submission.challenge, status: submission.status } });
+    }),
+  );
+
+  router.get(
+    "/:id/review", auth, requireRole("startup"), validate(idSchema, "params"),
+    asyncHandler(async (req, res) => {
+      const submission = await SubmissionModel.findById(req.params.id).populate("challenge", "owner title skill level mode").populate("candidate", "fullName slug headline skills");
+      if (!submission || String(submission.challenge.owner) !== req.user.id) return res.status(404).json({ ok: false, error: { message: "Candidate result not found", code: "NOT_FOUND" } });
+      const score = await ScoreModel.findOne({ submission: submission.id });
+      if (!score) return res.status(404).json({ ok: false, error: { message: "Score not found", code: "NOT_FOUND" } });
+      return res.json({ ok: true, data: { submission: { id: submission.id, candidate: submission.candidate, attempt: submission.attempt, answerText: submission.answerText, followups: submission.followups.map(({ qid, question, answerTranscript }) => ({ qid, question, answerTranscript })) }, challenge: submission.challenge, score: score.toObject ? { ...score.toObject(), runs: score.runs.map(({ total }) => ({ total })) } : score } });
     }),
   );
 

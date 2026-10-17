@@ -11,6 +11,12 @@ import ChallengeIntro from "./pages/ChallengeIntro.jsx";
 import Solve from "./pages/Solve.jsx";
 import Defend from "./pages/Defend.jsx";
 import Result from "./pages/Result.jsx";
+import Leaderboard from "./pages/Leaderboard.jsx";
+import CandidateDetail from "./pages/CandidateDetail.jsx";
+import BadgePage from "./pages/BadgePage.jsx";
+import PublicProfile from "./pages/PublicProfile.jsx";
+import MentorQueue from "./pages/MentorQueue.jsx";
+import Profile from "./pages/Profile.jsx";
 import "./workspace.css";
 import "./flow.css";
 
@@ -38,6 +44,8 @@ export default function App() {
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
         <Route path="ethics" element={<Ethics />} />
+        <Route path="badge/:vid" element={<BadgePage />} />
+        <Route path="u/:slug" element={<PublicProfile />} />
         <Route path="c/:id" element={<ChallengeIntro />} />
         <Route element={<ProtectedRoute />}>
           <Route path="app" element={<AppHome />} />
@@ -48,8 +56,14 @@ export default function App() {
             path="startup/challenges/:id/review"
             element={<ReviewChallenge />}
           />
+          <Route path="startup/challenges/:id/leaderboard" element={<Leaderboard />} />
+          <Route path="startup/submissions/:id" element={<CandidateDetail />} />
+        </Route>
+        <Route element={<ProtectedRoute roles={["mentor"]} />}>
+          <Route path="mentor" element={<MentorQueue />} />
         </Route>
         <Route element={<ProtectedRoute roles={["candidate"]} />}>
+          <Route path="profile" element={<Profile />} />
           <Route path="s/:id" element={<Solve />} />
           <Route path="s/:id/defend" element={<Defend />} />
           <Route path="s/:id/result" element={<Result />} />
