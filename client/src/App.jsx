@@ -7,7 +7,10 @@ import Ethics from "./pages/Ethics.jsx";
 import AppHome from "./pages/AppHome.jsx";
 import NewChallenge from "./pages/NewChallenge.jsx";
 import ReviewChallenge from "./pages/ReviewChallenge.jsx";
+import ChallengeIntro from "./pages/ChallengeIntro.jsx";
+import Solve from "./pages/Solve.jsx";
 import "./workspace.css";
+import "./flow.css";
 
 function NotFound() {
   return (
@@ -33,6 +36,7 @@ export default function App() {
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
         <Route path="ethics" element={<Ethics />} />
+        <Route path="c/:id" element={<ChallengeIntro />} />
         <Route element={<ProtectedRoute />}>
           <Route path="app" element={<AppHome />} />
         </Route>
@@ -42,6 +46,9 @@ export default function App() {
             path="startup/challenges/:id/review"
             element={<ReviewChallenge />}
           />
+        </Route>
+        <Route element={<ProtectedRoute roles={["candidate"]} />}>
+          <Route path="s/:id" element={<Solve />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Route>
