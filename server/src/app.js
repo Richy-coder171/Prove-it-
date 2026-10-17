@@ -12,6 +12,9 @@ import startupRoutes from "./routes/startup.js";
 import mentorRoutes from "./routes/mentor.js";
 import badgeRoutes from "./routes/badges.js";
 import profileRoutes from "./routes/profiles.js";
+import skillGapRoutes from "./routes/skillgap.js";
+import opportunityRoutes, { createCandidateMatchRouter } from "./routes/opportunities.js";
+import ventureRoutes from "./routes/ventures.js";
 import { env } from "./config/env.js";
 import { generalLimiter } from "./middleware/rateLimit.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
@@ -25,6 +28,10 @@ export function createApp({
   mentorRouter = mentorRoutes,
   badgeRouter = badgeRoutes,
   profileRouter = profileRoutes,
+  skillGapRouter = skillGapRoutes,
+  opportunityRouter = opportunityRoutes,
+  candidateMatchRouter = createCandidateMatchRouter(),
+  ventureRouter = ventureRoutes,
 } = {}) {
   const app = express();
   app.disable("x-powered-by");
@@ -47,6 +54,10 @@ export function createApp({
   app.use("/api/mentor", mentorRouter);
   app.use("/api/badges", badgeRouter);
   app.use("/api/users", profileRouter);
+  app.use("/api/skillgap", skillGapRouter);
+  app.use("/api/opportunities", opportunityRouter);
+  app.use("/api/candidates", candidateMatchRouter);
+  app.use("/api/ventures", ventureRouter);
   app.use(notFound);
   app.use(errorHandler);
   return app;

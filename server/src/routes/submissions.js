@@ -183,10 +183,10 @@ export function createSubmissionRouter({
             },
           });
       }
-      const attempts = await SubmissionModel.countDocuments({
-        challenge: challenge.id,
-        candidate: req.user.id,
-      });
+      const rootChallengeId = challenge.variantOf ?? challenge.id;
+      const family = await ChallengeModel.find({ $or: [{ _id: rootChallengeId }, { variantOf: rootChallengeId }] }).select('_id');
+      const challengeIds = family.map(({ _id }) => _id);
+      const attempts = await SubmissionModel.countDocuments({ challenge: { $in: challengeIds }, candidate: req.user.id });
       if (attempts >= 3)
         return res
           .status(409)

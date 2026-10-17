@@ -17,6 +17,10 @@ import BadgePage from "./pages/BadgePage.jsx";
 import PublicProfile from "./pages/PublicProfile.jsx";
 import MentorQueue from "./pages/MentorQueue.jsx";
 import Profile from "./pages/Profile.jsx";
+import Opportunities from "./pages/Opportunities.jsx";
+import VentureCreate from "./pages/VentureCreate.jsx";
+import VentureCard from "./pages/VentureCard.jsx";
+import CandidateMatches from "./pages/CandidateMatches.jsx";
 import "./workspace.css";
 import "./flow.css";
 
@@ -46,6 +50,7 @@ export default function App() {
         <Route path="ethics" element={<Ethics />} />
         <Route path="badge/:vid" element={<BadgePage />} />
         <Route path="u/:slug" element={<PublicProfile />} />
+        <Route path="venture/:id" element={<VentureCard />} />
         <Route path="c/:id" element={<ChallengeIntro />} />
         <Route element={<ProtectedRoute />}>
           <Route path="app" element={<AppHome />} />
@@ -57,13 +62,16 @@ export default function App() {
             element={<ReviewChallenge />}
           />
           <Route path="startup/challenges/:id/leaderboard" element={<Leaderboard />} />
+          <Route path="startup/challenges/:id/matches" element={<CandidateMatches />} />
           <Route path="startup/submissions/:id" element={<CandidateDetail />} />
+          <Route path="startup/ventures/new" element={<VentureCreate />} />
         </Route>
         <Route element={<ProtectedRoute roles={["mentor"]} />}>
           <Route path="mentor" element={<MentorQueue />} />
         </Route>
         <Route element={<ProtectedRoute roles={["candidate"]} />}>
           <Route path="profile" element={<Profile />} />
+          <Route path="opportunities" element={<Opportunities />} />
           <Route path="s/:id" element={<Solve />} />
           <Route path="s/:id/defend" element={<Defend />} />
           <Route path="s/:id/result" element={<Result />} />

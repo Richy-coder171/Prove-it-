@@ -38,7 +38,7 @@ describe("candidate submission flow", () => {
       findOne: vi.fn(),
       findOneAndUpdate: vi.fn(),
     };
-    ChallengeModel = { findById: vi.fn() };
+    ChallengeModel = { findById: vi.fn(), find: vi.fn().mockReturnValue({ select: vi.fn().mockResolvedValue([{ _id: challengeId }]) }) };
     followupGenerator = vi.fn();
     app = createApp({
       submissionRouter: createSubmissionRouter({

@@ -81,3 +81,9 @@ export const ChallengeGenerationInputSchema = z
   .strict();
 
 export const ChallengeUpdateSchema = ChallengePackageSchema;
+
+export const SkillGapGuideSchema = z.object({
+  weakCriteria: z.array(z.object({ id: z.string(), name: z.string(), gap: z.string().trim().min(10).max(400), howToImprove: z.string().trim().min(10).max(500) }).strict()).min(1).max(6),
+  learningPath: z.array(z.object({ title: z.string().trim().min(3).max(120), why: z.string().trim().min(8).max(300), estHours: z.number().min(0.5).max(80), resourceHint: z.string().trim().min(3).max(160) }).strict()).min(3).max(5),
+  retryAdvice: z.string().trim().min(15).max(800),
+}).strict();
