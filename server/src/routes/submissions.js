@@ -6,15 +6,22 @@ import { asyncHandler } from "../middleware/asyncHandler.js";
 import { auth } from "../middleware/auth.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { validate } from "../middleware/validate.js";
+import multer from "multer";
+import { generateFollowups } from "../services/ai/followups.js";
+import { openAuthorizedAudio, storeAndTranscribe } from "../services/audio.js";
 
 export function createSubmissionRouter({
   SubmissionModel = Submission,
   ChallengeModel = Challenge,
+  followupGenerator = generateFollowups,
+  audioStore = storeAndTranscribe,
+  audioOpen = openAuthorizedAudio,
 } = {}) {
   const router = Router();
   const idSchema = z
     .object({ id: z.string().regex(/^[a-f\d]{24}$/i, "Invalid submission ID") })
     .strict();
+  const questionParamsSchema = z.object({ id: z.string().regex(/^[a-f\d]{24}$/i, "Invalid submission ID"), qid: z.enum(["q1", "q2", "q3"]) }).strict();
   const startSchema = z
     .object({
       challengeId: z.string().regex(/^[a-f\d]{24}$/i, "Invalid challenge ID"),
@@ -32,6 +39,75 @@ export function createSubmissionRouter({
       })
       .strict(),
   ]);
+  const answerTextSchema = z.object({ text: z.string().trim().min(1).max(10_000) }).strict();
+  const audioUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 1 }, fileFilter: (_req, file, done) => done(null, /^audio\/(webm|mp4|mpeg|wav|ogg)$/.test(file.mimetype)) });
+
+  async function owned(req) {
+    return SubmissionModel.findOne({ _id: req.params.id, candidate: req.user.id });
+  }
+
+  router.post(
+    "/:id/followups",
+    auth, requireRole("candidate"), validate(idSchema, "params"),
+    asyncHandler(async (req, res) => {
+      const submission = await owned(req);
+      if (!submission) return res.status(404).json({ ok: false, error: { message: "Submission not found", code: "NOT_FOUND" } });
+      if (!["submitted", "defending"].includes(submission.status)) return res.status(409).json({ ok: false, error: { message: "Submit your answer before starting the defense", code: "ANSWER_NOT_SUBMITTED" } });
+      if (!submission.followups?.length) {
+        const challenge = await ChallengeModel.findById(submission.challenge);
+        const result = await followupGenerator({ answerText: submission.answerText, challenge, seeds: challenge.followupSeeds });
+        submission.followups = result.questions.map(({ id: qid, ...question }) => ({ qid, ...question }));
+        submission.status = "defending";
+        await submission.save();
+      }
+      return res.json({ ok: true, data: { questions: submission.followups.map(({ qid, question, targets, difficulty, answerTranscript }) => ({ id: qid, question, targets, difficulty, answered: Boolean(answerTranscript) })) } });
+    }),
+  );
+
+  router.post(
+    "/:id/followups/:qid/answer",
+    auth, requireRole("candidate"), validate(questionParamsSchema, "params"),
+    (req, res, next) => {
+      if (req.is("multipart/form-data")) return audioUpload.single("audio")(req, res, next);
+      return next();
+    },
+    asyncHandler(async (req, res) => {
+      const submission = await owned(req);
+      if (!submission) return res.status(404).json({ ok: false, error: { message: "Submission not found", code: "NOT_FOUND" } });
+      if (submission.status !== "defending") return res.status(409).json({ ok: false, error: { message: "The defense is not active", code: "DEFENSE_NOT_ACTIVE" } });
+      const followup = submission.followups.find(({ qid }) => qid === req.params.qid);
+      if (!followup) return res.status(404).json({ ok: false, error: { message: "Question not found", code: "QUESTION_NOT_FOUND" } });
+      if (followup.answeredAt) return res.status(409).json({ ok: false, error: { message: "This question is already answered", code: "ANSWER_LOCKED" } });
+      let transcript; let audioFileId; let answeredBy = "text";
+      if (req.file) {
+        const stored = await audioStore({ buffer: req.file.buffer, mimetype: req.file.mimetype, submission: submission.id, qid: followup.qid, owner: req.user.id });
+        transcript = stored.transcript; audioFileId = stored.fileId; answeredBy = "voice";
+      } else {
+        const parsed = answerTextSchema.safeParse(req.body);
+        if (!parsed.success) return res.status(400).json({ ok: false, error: { message: "Provide a text answer or audio recording", code: "INVALID_ANSWER" } });
+        transcript = parsed.data.text;
+      }
+      followup.answerTranscript = transcript;
+      followup.audioFileId = audioFileId;
+      followup.answeredAt = new Date();
+      followup.answeredBy = answeredBy;
+      await submission.save();
+      return res.json({ ok: true, data: { id: followup.qid, answered: true, transcript, answeredBy } });
+    }),
+  );
+
+  router.get(
+    "/:id/audio/:qid", auth, requireRole("candidate"), validate(questionParamsSchema, "params"),
+    asyncHandler(async (req, res) => {
+      const submission = await owned(req);
+      const followup = submission?.followups.find(({ qid }) => qid === req.params.qid);
+      if (!followup?.audioFileId) return res.status(404).json({ ok: false, error: { message: "Audio not found", code: "NOT_FOUND" } });
+      res.type("application/octet-stream");
+      const stream = audioOpen(followup.audioFileId);
+      stream.on("error", (error) => { if (!res.headersSent) res.status(404).end(); else res.destroy(error); });
+      stream.pipe(res);
+    }),
+  );
 
   router.post(
     "/start",

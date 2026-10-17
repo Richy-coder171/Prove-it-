@@ -278,6 +278,7 @@ export default function Solve() {
                   The next step is to explain the choices behind your work.
                 </span>
               </div>
+              <Link className="button button-dark" to={`/s/${id}/defend`}>Start defense <Send size={14} /></Link>
             </div>
           )}
         </section>

@@ -27,6 +27,7 @@ describe("candidate submission flow", () => {
   let SubmissionModel;
   let ChallengeModel;
   let app;
+  let followupGenerator;
   const candidateCookie = () =>
     `proveit_session=${jwt.sign({ sub: "candidate-1", role: "candidate" }, env.JWT_SECRET)}`;
 
@@ -38,10 +39,12 @@ describe("candidate submission flow", () => {
       findOneAndUpdate: vi.fn(),
     };
     ChallengeModel = { findById: vi.fn() };
+    followupGenerator = vi.fn();
     app = createApp({
       submissionRouter: createSubmissionRouter({
         SubmissionModel,
         ChallengeModel,
+        followupGenerator,
       }),
     });
   });
@@ -140,5 +143,35 @@ describe("candidate submission flow", () => {
       _id: submissionId,
       candidate: "candidate-1",
     });
+  });
+
+  it("generates exactly three answer-specific followups once per submission", async () => {
+    const questions = ["q1", "q2", "q3"].map((qid) => ({ qid, question: `Explain the choice behind ${qid}?`, targets: ["your submitted answer"], difficulty: "probe" }));
+    const submission = makeSubmission({ status: "submitted", answerText: "I chose a regional comparison because delays differed." });
+    SubmissionModel.findOne.mockResolvedValue(submission);
+    ChallengeModel.findById.mockResolvedValue({ followupSeeds: ["seed"], title: "Analysis task" });
+    followupGenerator.mockResolvedValue({ questions: questions.map(({ qid, ...question }) => ({ id: qid, ...question })) });
+
+    const response = await request(app).post(`/api/submissions/${submissionId}/followups`).set("Cookie", candidateCookie());
+    expect(response.status).toBe(200);
+    expect(response.body.data.questions).toHaveLength(3);
+    expect(submission.status).toBe("defending");
+    expect(followupGenerator).toHaveBeenCalledWith(expect.objectContaining({ answerText: submission.answerText }));
+
+    const second = await request(app).post(`/api/submissions/${submissionId}/followups`).set("Cookie", candidateCookie());
+    expect(second.status).toBe(200);
+    expect(followupGenerator).toHaveBeenCalledOnce();
+  });
+
+  it("records text defense answers and prevents changing them later", async () => {
+    const submission = makeSubmission({ status: "defending", followups: [{ qid: "q1", question: "Why did you compare regions?", targets: ["comparison"], difficulty: "probe" }] });
+    SubmissionModel.findOne.mockResolvedValue(submission);
+    const answer = await request(app).post(`/api/submissions/${submissionId}/followups/q1/answer`).set("Cookie", candidateCookie()).send({ text: "The regional comparison showed a consistent delay pattern." });
+    expect(answer.status).toBe(200);
+    expect(submission.followups[0].answerTranscript).toContain("regional comparison");
+    expect(submission.followups[0].answeredBy).toBe("text");
+
+    const duplicate = await request(app).post(`/api/submissions/${submissionId}/followups/q1/answer`).set("Cookie", candidateCookie()).send({ text: "Updated answer." });
+    expect(duplicate.status).toBe(409);
   });
 });
