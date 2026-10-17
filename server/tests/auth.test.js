@@ -1,9 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import request from 'supertest';
-import { createApp } from '../src/app.js';
-import { createAuthRouter } from '../src/routes/auth.js';
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import request from "supertest";
+import { createApp } from "../src/app.js";
+import { createAuthRouter } from "../src/routes/auth.js";
 
-describe('authentication routes', () => {
+describe("authentication routes", () => {
   let User;
   let app;
 
@@ -12,52 +12,85 @@ describe('authentication routes', () => {
     app = createApp({ authRouter: createAuthRouter(User) });
   });
 
-  it('registers a user and sets an httpOnly session cookie', async () => {
-    User.create.mockResolvedValue({ id: 'candidate-1', email: 'person@example.com', fullName: 'A Person', role: 'candidate' });
+  it("registers a user and sets an httpOnly session cookie", async () => {
+    User.create.mockResolvedValue({
+      id: "candidate-1",
+      email: "person@example.com",
+      fullName: "A Person",
+      role: "candidate",
+    });
 
-    const response = await request(app).post('/api/auth/register').send({
-      email: 'PERSON@example.com', password: 'correct-horse-battery', fullName: 'A Person', role: 'candidate',
+    const response = await request(app).post("/api/auth/register").send({
+      email: "PERSON@example.com",
+      password: "correct-horse-battery",
+      fullName: "A Person",
+      role: "candidate",
     });
 
     expect(response.status).toBe(201);
-    expect(response.body.data.user).toMatchObject({ email: 'person@example.com', role: 'candidate' });
-    expect(response.headers['set-cookie'][0]).toContain('HttpOnly');
+    expect(response.body.data.user).toMatchObject({
+      email: "person@example.com",
+      role: "candidate",
+    });
+    expect(response.headers["set-cookie"][0]).toContain("HttpOnly");
     expect(response.body.data.user.passwordHash).toBeUndefined();
-    expect(User.create.mock.calls[0][0].passwordHash).not.toBe('correct-horse-battery');
+    expect(User.create.mock.calls[0][0].passwordHash).not.toBe(
+      "correct-horse-battery",
+    );
   });
 
-  it('rejects weak passwords before reaching the user store', async () => {
-    const response = await request(app).post('/api/auth/register').send({
-      email: 'person@example.com', password: 'short', fullName: 'A Person', role: 'candidate',
+  it("rejects weak passwords before reaching the user store", async () => {
+    const response = await request(app).post("/api/auth/register").send({
+      email: "person@example.com",
+      password: "short",
+      fullName: "A Person",
+      role: "candidate",
     });
 
     expect(response.status).toBe(400);
-    expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    expect(response.body.error.code).toBe("VALIDATION_ERROR");
     expect(User.create).not.toHaveBeenCalled();
   });
 
-  it('rejects incorrect login credentials', async () => {
+  it("rejects incorrect login credentials", async () => {
     User.findOne.mockReturnValue({ select: vi.fn().mockResolvedValue(null) });
 
-    const response = await request(app).post('/api/auth/login').send({ email: 'person@example.com', password: 'not-it' });
+    const response = await request(app)
+      .post("/api/auth/login")
+      .send({ email: "person@example.com", password: "not-it" });
 
     expect(response.status).toBe(401);
-    expect(response.body.error.code).toBe('INVALID_CREDENTIALS');
+    expect(response.body.error.code).toBe("INVALID_CREDENTIALS");
   });
 
-  it('returns the authenticated user and rejects missing sessions', async () => {
-    User.findById.mockResolvedValue({ id: 'candidate-1', email: 'person@example.com', fullName: 'A Person', role: 'candidate' });
-    User.create.mockResolvedValue({ id: 'candidate-1', email: 'person@example.com', fullName: 'A Person', role: 'candidate' });
-
-    const registered = await request(app).get('/api/auth/me');
-    expect(registered.status).toBe(401);
-
-    const loggedIn = await request(app).post('/api/auth/register').send({
-      email: 'person@example.com', password: 'correct-horse-battery', fullName: 'A Person', role: 'candidate',
+  it("returns the authenticated user and rejects missing sessions", async () => {
+    User.findById.mockResolvedValue({
+      id: "candidate-1",
+      email: "person@example.com",
+      fullName: "A Person",
+      role: "candidate",
+    });
+    User.create.mockResolvedValue({
+      id: "candidate-1",
+      email: "person@example.com",
+      fullName: "A Person",
+      role: "candidate",
     });
 
-    const me = await request(app).get('/api/auth/me').set('Cookie', loggedIn.headers['set-cookie']);
+    const registered = await request(app).get("/api/auth/me");
+    expect(registered.status).toBe(401);
+
+    const loggedIn = await request(app).post("/api/auth/register").send({
+      email: "person@example.com",
+      password: "correct-horse-battery",
+      fullName: "A Person",
+      role: "candidate",
+    });
+
+    const me = await request(app)
+      .get("/api/auth/me")
+      .set("Cookie", loggedIn.headers["set-cookie"]);
     expect(me.status).toBe(200);
-    expect(me.body.data.user.id).toBe('candidate-1');
+    expect(me.body.data.user.id).toBe("candidate-1");
   });
 });
